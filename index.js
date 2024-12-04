@@ -29,6 +29,21 @@ async function run() {
         // ! DB
         const visa = client.db("visa").collection("add-visa");
 
+        // ! POST
+        app.post('/add-visa', async (req, res) => {
+            const data = req.body;
+            const result = await visa.insertOne(data);
+            res.send(result);
+        });
+
+
+        app.get('/add-visa', async (req, res) => {
+            const result = await visa.find().toArray()
+            res.send(result);
+        });
+
+
+
 
 
 
