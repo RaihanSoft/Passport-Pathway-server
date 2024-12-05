@@ -1,4 +1,4 @@
-
+require('dotenv').config()
 
 
 const express = require('express');
@@ -8,7 +8,9 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
-const uri = "mongodb+srv://aboRaihan:fBCOUA4pM6erI5dc@cluster0.khjiv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.khjiv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
     serverApi: {
@@ -69,8 +71,28 @@ async function run() {
             }
         });
 
-        // GET - Get All Visas (No Filter)
+
+
+        // GET - Get the 6 Latest Newly Added Visas
         app.get('/all-visas', async (req, res) => {
+            try {
+                // Sort by `_id` in descending order to fetch the newest first and limit the result to 6 documents
+                const visas = await visaCollection
+                    .find()
+                    .sort({ _id: -1 }) // Newest first
+                    .limit(6)          // Limit to 6 documents
+                    .toArray();
+
+                res.status(200).json(visas);
+            } catch (error) {
+                console.error("Error fetching all visas:", error);
+                res.status(500).json({ message: "Error fetching all visas." });
+            }
+        });
+
+
+        // GET - Get All Visas (No Filter)
+        app.get('/all-visa', async (req, res) => {
             try {
                 const visas = await visaCollection.find().toArray();
                 res.status(200).json(visas);
@@ -80,7 +102,8 @@ async function run() {
             }
         });
 
-      
+
+  
 
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
