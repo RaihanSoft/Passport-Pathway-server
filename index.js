@@ -1,14 +1,15 @@
+
+
+
 const express = require('express');
 const cors = require('cors');
-
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = "mongodb+srv://aboRaihan:fBCOUA4pM6erI5dc@cluster0.khjiv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -26,96 +27,60 @@ async function run() {
         await client.connect();
         console.log("Connected to MongoDB!");
 
-        // ! DB
-        const visa = client.db("visa").collection("add-visa");
+        // Database and Collection references
+        const visaCollection = client.db("visa").collection("add-visa");
+        const applicationsCollection = client.db("visa").collection("applications");
 
-        // ! POST
-        app.post('/add-visa', async (req, res) => {
-            const data = req.body;
-            const result = await visa.insertOne(data);
-            res.send(result);
-        });
-
-
-        app.get('/add-visa', async (req, res) => {
-            const result = await visa.find().toArray()
-            res.send(result);
-        });
-
-
-
-
-        //! user post ...........................................................
+        // POST - Submit Visa Application
         app.post('/apply-visa', async (req, res) => {
             const application = req.body;
-            const result = await client.db('visa').collection('applications').insertOne(application);
-            res.send(result);
-        });
-        //   !  2nd.................................... 
 
-        app.get('/my-visa-applications', async (req, res) => {
-            const email = req.query.email;
+            // Validate required fields
+            if (!application.email || !application.firstName || !application.lastName) {
+                return res.status(400).json({ message: "Missing required fields." });
+            }
+
             try {
-                const applications = await client
-                    .db("visa")
-                    .collection("applications")
-                    .find({ email })
-                    .toArray();
-                res.send(applications);
+                const result = await applicationsCollection.insertOne(application);
+                res.status(201).json({ message: "Application submitted successfully.", result });
             } catch (error) {
-                res.status(500).send({ message: 'Error fetching applications' });
+                console.error("Error submitting application:", error);
+                res.status(500).json({ message: "Error submitting application." });
             }
         });
 
-        // DELETE route for removing an application
+        // GET - Fetch Visa Details by ID
+        app.get('/visa-details/:id', async (req, res) => {
+            const { id } = req.params;
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ message: "Invalid ID format." });
+            }
 
-
-        app.delete('/cancel-application/:id', async (req, res) => {
-            const id = req.params.id;
             try {
-                const result = await client
-                    .db("visa")
-                    .collection("applications")
-                    .deleteOne({ _id: new ObjectId(id) }); // Ensure correct conversion to ObjectId
-
-                if (result.deletedCount === 1) {
-                    res.send({ message: 'Application canceled successfully' });
+                const visa = await visaCollection.findOne({ _id: new ObjectId(id) });
+                if (visa) {
+                    res.status(200).json(visa);
                 } else {
-                    res.status(404).send({ message: 'Application not found' });
+                    res.status(404).json({ message: "Visa not found." });
                 }
             } catch (error) {
-                console.error('Error deleting application:', error);
-                res.status(500).send({ message: 'Error canceling application' });
+                console.error("Error fetching visa details:", error);
+                res.status(500).json({ message: "Error fetching visa details." });
             }
         });
 
-
-
-
-        // ! 3rd 
-
-
-
-        app.delete('/delete-visa/:id', async (req, res) => {
-
-            const { id } = req.params;
-
-            const query = { _id: new ObjectId(id) }
-            const result = await visa.deleteOne(query)
-            res.send(result)
-
-
+        // GET - Get All Visas (No Filter)
+        app.get('/all-visas', async (req, res) => {
+            try {
+                const visas = await visaCollection.find().toArray();
+                res.status(200).json(visas);
+            } catch (error) {
+                console.error("Error fetching all visas:", error);
+                res.status(500).json({ message: "Error fetching all visas." });
+            }
         });
 
-        // !4th 
-
-
-
-
-
-
-
-
+      
 
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
