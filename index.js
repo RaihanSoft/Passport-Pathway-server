@@ -155,7 +155,6 @@ async function run() {
             }
         });
 
-      
 
         // PUT - Update Visa
         app.put('/update-visa/:id', async (req, res) => {
@@ -205,6 +204,22 @@ async function run() {
             }
         });
       
+
+
+        // GET - Get All Visa Applications for a user
+        app.get('/my-visa-applications', async (req, res) => {
+            const email = req.query.email;
+            try {
+                const applications = await client
+                    .db("visa")
+                    .collection("applications")
+                    .find({ email })
+                    .toArray();
+                res.send(applications);
+            } catch (error) {
+                res.status(500).send({ message: 'Error fetching applications' });
+            }
+        });
 
 
 
