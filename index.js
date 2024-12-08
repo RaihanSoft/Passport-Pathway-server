@@ -221,7 +221,25 @@ async function run() {
             }
         });
 
+        // DELETE - Cancel Visa Application
+        app.delete('/cancel-application/:id', async (req, res) => {
+            const id = req.params.id;
+            try {
+                const result = await client
+                    .db("visa")
+                    .collection("applications")
+                    .deleteOne({ _id: new ObjectId(id) }); // Ensure correct conversion to ObjectId
 
+                if (result.deletedCount === 1) {
+                    res.send({ message: 'Application canceled successfully' });
+                } else {
+                    res.status(404).send({ message: 'Application not found' });
+                }
+            } catch (error) {
+                console.error('Error deleting application:', error);
+                res.status(500).send({ message: 'Error canceling application' });
+            }
+        });
 
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
