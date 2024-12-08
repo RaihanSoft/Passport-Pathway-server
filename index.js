@@ -233,7 +233,7 @@ async function run() {
                 if (result.deletedCount === 1) {
                     res.send({ message: 'Application canceled successfully' });
                 } else {
-                    res.status(404).send({ message: 'Application not found' });
+                    res.status(404).send({ message: 'not found' });
                 }
             } catch (error) {
                 console.error('Error deleting application:', error);
